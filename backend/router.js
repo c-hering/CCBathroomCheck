@@ -9,5 +9,5 @@ module.exports = app => {
 
   app.route('/CC/dorms').post(controller.addDorm);
   app.route('/CC/:dorm').post(controller.addBathrooms);
-  // app.route('/CC/:dorm/:bathroom').get(controller.setStatus);
+  app.route('/CC/:dorm/:bathroom').post(controller.setStatus);
 }

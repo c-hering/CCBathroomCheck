@@ -43,19 +43,30 @@ exports.dormBathrooms = (req,res) => {
   });
 };
 
-exports.getBathroom = (req, res) => {
+function getStatus(dorm, bathroom){
+  var promise = new Promise( (resolve,reject) => {
+    db.get("SELECT bathroom_status status FROM " + dorm + " WHERE bathroom_name = ?", [bathroom], (err,row) => {
+      // console.log(row.status);
+      let tmp = row.status;
+      resolve([err, tmp]);
+    });
+  });
+  return promise;
+}
+
+exports.getBathroom = async (req, res) => {
   console.log("request to get specific bathroom");
 
   var dorm = req.params.dorm;
   var bathroom = req.params.bathroom;
 
-  db.get("SELECT bathroom_status status FROM " + dorm + " WHERE bathroom_name = ?", [bathroom], (err,row) => {
-    if(err){
-      res.send("Err: " + err);
-    }else{
-      res.json({"name":bathroom, "status":row});
-    }
-  });
+  var result = await getStatus(dorm, bathroom);
+
+  if(result[0]){
+    res.send("Err: " + result[0]);
+  }else{
+    res.json({"name":bathroom, "status":result[1]});
+  }
 };
 
 exports.addDorm = (req,res) => {
@@ -96,5 +107,26 @@ exports.addBathrooms = (req,res) => {
     });
   }else{
     res.send("Err: no url encoded body");
+  }
+}
+
+exports.setStatus = async (req,res) => {
+  console.log('request to change status');
+  var dorm = req.params.dorm;
+  var bathroom = req.params.bathroom;
+
+  var result = await getStatus(dorm, bathroom);
+
+  if(result[0]){
+    res.send("Err: " + result[0]);
+  }else{
+    db.run("UPDATE " + dorm + " SET bathroom_status = " + Math.abs((result[1] - 1)) + " WHERE bathroom_name = '" + bathroom + "'", (err) => {
+      if(err){
+        res.send("Err: " + err);
+      }else{
+        res.send("Status Updated");
+      }
+    });
+
   }
 }
