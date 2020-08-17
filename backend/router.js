@@ -8,5 +8,5 @@ module.exports = app => {
 
 
   app.route('/CC/dorms').post(controller.addDorm);
-
+  app.route('/CC/:dorm').post(controller.addBathrooms);
 }

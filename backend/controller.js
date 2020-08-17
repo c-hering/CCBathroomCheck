@@ -35,12 +35,8 @@ exports.dormBathrooms = (req,res) => {
       res.send("Err: " + err);
     }else{
       row.forEach((i) => {
-        var status = false;
-        if(i.bathroom_status == 1){
-          status = true;
-        }
         data.push({"name" : i.bathroom_name,
-                    "status" : status});
+                    "status" : i.bathroom_status});
         res.json(data);
       });
     }
@@ -56,12 +52,34 @@ exports.addDorm = (req,res) => {
     db.serialize(() => {
       db.run("INSERT INTO cc_dorms(dorm_name) VALUES(?)", [dorm_name], (err) => {
         if(err){
-          throw err;
+          res.send("Err: " + err);
+        }else{
+          res.send("Dorm Added");
         }
       });
     });
-    res.send("Dorm Added");
   }else{
     res.send("Err: no url encoded body");
   };
 };
+
+//on the app side, mutliple bathrooms to add should be parsed into single requests
+exports.addBathrooms = (req,res) => {
+  console.log('request to add bathroom');
+  var dorm = req.params.dorm;
+
+  db.run('CREATE TABLE IF NOT EXISTS ' + dorm + '(bathroom_name TEXT UNIQUE NOT NULL, bathroom_status INTEGER NOT NULL);')
+  if(req.body !== {}){
+    db.serialize(() => {
+      db.run("INSERT INTO " + dorm + "(bathroom_name,bathroom_status) VALUES(?,?)", [req.body.name, 1], (err) => {
+        if(err){
+          res.send("Err: " + err);
+        }else{
+          res.send("Bathroom Added");
+        }
+      });
+    });
+  }else{
+    res.send("Err: no url encoded body");
+  }
+}
