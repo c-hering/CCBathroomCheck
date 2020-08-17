@@ -29,7 +29,7 @@ exports.dormBathrooms = (req,res) => {
   var dorm = req.params.dorm;
 
   db.run('CREATE TABLE IF NOT EXISTS ' + dorm + '(bathroom_name TEXT UNIQUE NOT NULL, bathroom_status INTEGER NOT NULL);')
-  db.all("SELECT (bathroom_name, bathroom_status) FROM " + dorm, [], (err,row) =>{
+  db.all("SELECT bathroom_name, bathroom_status FROM " + dorm, [], (err,row) =>{
     var data = [];
     if(err){
       res.send("Err: " + err);
@@ -37,8 +37,23 @@ exports.dormBathrooms = (req,res) => {
       row.forEach((i) => {
         data.push({"name" : i.bathroom_name,
                     "status" : i.bathroom_status});
-        res.json(data);
       });
+      res.json(data);
+    }
+  });
+};
+
+exports.getBathroom = (req, res) => {
+  console.log("request to get specific bathroom");
+
+  var dorm = req.params.dorm;
+  var bathroom = req.params.bathroom;
+
+  db.get("SELECT bathroom_status status FROM " + dorm + " WHERE bathroom_name = ?", [bathroom], (err,row) => {
+    if(err){
+      res.send("Err: " + err);
+    }else{
+      res.json({"name":bathroom, "status":row});
     }
   });
 };
