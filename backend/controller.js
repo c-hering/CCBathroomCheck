@@ -18,7 +18,7 @@ function compare(rawPassword, hashedPassword){
   try {
     const [ salt, rounds ] = hashedPassword.split('$');
     const hashedRawPassword = hash(rawPassword, { salt, rounds });
-    // console.log("IN COMPARE")
+    console.log(hashedPassword === hashedRawPassword);
     return hashedPassword === hashedRawPassword;
   } catch (error) {
     throw Error(error.message);
@@ -87,25 +87,30 @@ exports.dormBathrooms = (req,res) => {
   console.log("request for a dorm's bathrooms");
   var dorm = req.params.dorm;
   var hash = req.query.hash;
-  var tmp = checkPass(hash, 0);
-  if(tmp){
-    // db.run('CREATE TABLE IF NOT EXISTS ' + dorm + '(bathroom_name TEXT UNIQUE NOT NULL, bathroom_status INTEGER NOT NULL);')
-    db.all("SELECT bathroom_name, bathroom_status FROM " + dorm, [], (err,row) =>{
-      var data = [];
-      if(err){
-        console.log("Err:" + err)
-        res.send("Err: " + err);
-      }else{
-        row.forEach((i) => {
-          data.push({"name" : i.bathroom_name,
-                      "status" : i.bathroom_status});
-        });
-        res.json(data);
-      }
-    });
-  }else{
-    res.send("Err: Incorrect Password");
-  }
+  checkPass(hash, 0).then((tmp) => {
+    if(tmp){
+      console.log("asdfasd" + tmp)
+      // db.run('CREATE TABLE IF NOT EXISTS ' + dorm + '(bathroom_name TEXT UNIQUE NOT NULL, bathroom_status INTEGER NOT NULL);')
+      db.all("SELECT bathroom_name, bathroom_status FROM " + dorm, [], (err,row) =>{
+        var data = [];
+        if(err){
+          console.log("Err:" + err)
+          res.send("Err: " + err);
+        }else{
+          row.forEach((i) => {
+            data.push({"name" : i.bathroom_name,
+                        "status" : i.bathroom_status});
+          });
+          res.json(data);
+        }
+      });
+    }else{
+      console.log("asdfas" + tmp)
+      res.send("Err: Incorrect Password");
+    }
+    console.log("Hash check: " + tmp)
+  });
+
 };
 
 exports.getBathroom = async (req, res) => {
@@ -115,46 +120,47 @@ exports.getBathroom = async (req, res) => {
   var bathroom = req.params.bathroom;
   var hash = req.query.hash;
 
-  var tmp = checkPass(hash, 1);
-  if(tmp){
-    var result = await getStatus(dorm, bathroom);
-
-    if(result[0]){
-      res.send("Err: " + result[0]);
+  checkPass(hash, 1).then((tmp) => {
+    if(tmp){
+      getStatus(dorm, bathroom).then((result) => {
+        if(result[0]){
+          res.send("Err: " + result[0]);
+        }else{
+          res.json({"name":bathroom, "status":result[1]});
+        }
+      });
     }else{
-      res.json({"name":bathroom, "status":result[1]});
+      res.send("Err: Incorrect Password");
     }
-  }else{
-    res.send("Err: Incorrect Password");
-  }
+  });
 };
 
 exports.addDorm = (req,res) => {
   console.log("request to add dorm");
 
   var hash = req.query.hash;
-  var tmp = checkPass(hash, 0);
-
-  if(tmp){
-    db.run('CREATE TABLE IF NOT EXISTS cc_dorms (dorm_name TEXT UNIQUE NOT NULL);');
-    if(req.body !== {}){
-      var dorm_name = req.body.name;
-      console.log(req.body.name);
-      db.serialize(() => {
-        db.run("INSERT INTO cc_dorms(dorm_name) VALUES(?)", [dorm_name], (err) => {
-          if(err){
-            res.send("Err: " + err);
-          }else{
-            res.send("Dorm Added");
-          }
+  checkPass(hash, 0).then((tmp) => {
+    if(tmp){
+      db.run('CREATE TABLE IF NOT EXISTS cc_dorms (dorm_name TEXT UNIQUE NOT NULL);');
+      if(req.body !== {}){
+        var dorm_name = req.body.name;
+        console.log(req.body.name);
+        db.serialize(() => {
+          db.run("INSERT INTO cc_dorms(dorm_name) VALUES(?)", [dorm_name], (err) => {
+            if(err){
+              res.send("Err: " + err);
+            }else{
+              res.send("Dorm Added");
+            }
+          });
         });
-      });
+      }else{
+        res.send("Err: no url encoded body");
+      };
     }else{
-      res.send("Err: no url encoded body");
-    };
-  }else{
-    res.send("Err: Incorrect Password");
-  }
+      res.send("Err: Incorrect Password");
+    }
+  });
 };
 
 //on the app side, mutliple bathrooms to add should be parsed into single requests
@@ -163,23 +169,24 @@ exports.addBathrooms = (req,res) => {
   var dorm = req.params.dorm;
   var hash = req.query.hash;
 
-  var tmp = checkPass(hash, 0);
-  if(tmp){
-    db.run('CREATE TABLE IF NOT EXISTS ' + dorm + '(bathroom_name TEXT UNIQUE NOT NULL, bathroom_status INTEGER NOT NULL);')
-    if(req.body !== {}){
-      db.serialize(() => {
-        db.run("INSERT INTO " + dorm + "(bathroom_name,bathroom_status) VALUES(?,?)", [req.body.name, 1], (err) => {
-          if(err){
-            res.send("Err: " + err);
-          }else{
-            res.send("Bathroom Added");
-          }
+  checkPass(hash, 0).then((tmp) => {
+    if(tmp){
+      db.run('CREATE TABLE IF NOT EXISTS ' + dorm + '(bathroom_name TEXT UNIQUE NOT NULL, bathroom_status INTEGER NOT NULL);')
+      if(req.body !== {}){
+        db.serialize(() => {
+          db.run("INSERT INTO " + dorm + "(bathroom_name,bathroom_status) VALUES(?,?)", [req.body.name, 1], (err) => {
+            if(err){
+              res.send("Err: " + err);
+            }else{
+              res.send("Bathroom Added");
+            }
+          });
         });
-      });
+      }
+    }else{
+      res.send("Err: no url encoded body");
     }
-  }else{
-    res.send("Err: no url encoded body");
-  }
+  });
 }
 
 exports.setStatus = async (req,res) => {
@@ -188,23 +195,23 @@ exports.setStatus = async (req,res) => {
   var bathroom = req.params.bathroom;
   var hash = req.query.hash;
 
-  var tmp = checkPass(hash, 1);
-  if(tmp){
-
-    var result = await getStatus(dorm, bathroom);
-
-    if(result[0]){
-      res.send("Err: " + result[0]);
-    }else{
-      db.run("UPDATE " + dorm + " SET bathroom_status = " + Math.abs((result[1] - 1)) + " WHERE bathroom_name = '" + bathroom + "'", (err) => {
-        if(err){
-          res.send("Err: " + err);
+  checkPass(hash, 1).then((tmp) => {
+    if(tmp){
+      getStatus(dorm, bathroom).then((result) => {
+        if(result[0]){
+          res.send("Err: " + result[0]);
         }else{
-          res.send("Status Updated");
+          db.run("UPDATE " + dorm + " SET bathroom_status = " + Math.abs((result[1] - 1)) + " WHERE bathroom_name = '" + bathroom + "'", (err) => {
+            if(err){
+              res.send("Err: " + err);
+            }else{
+              res.send("Status Updated");
+            }
+          });
         }
       });
+    }else{
+      res.send("Err: Incorrect Password");
     }
-  }else{
-    res.send("Err: Incorrect Password");
-  }
+  });
 }

@@ -4,6 +4,9 @@ import { Grid, Paper, Switch } from '@material-ui/core';
 export default class Bathroom extends React.Component{
   constructor(props){
     super(props);
+    this.state={
+      switchStatus: Boolean(!this.props.statusSimple)
+    }
   }
 
   render(){
@@ -22,12 +25,16 @@ export default class Bathroom extends React.Component{
         <Paper style={{padding: 15}}>
           {this.props.status}
         </Paper>
-        // <Paper style={{padding: 15}}>
-        //   toggle
-        // </Paper>
-        <Switch />
+        <Switch checked={this.state.switchStatus} onChange={() => {
+          console.log("Switch");
+          this.props.switchHandler(this.props.bathroom_name, this.props.dorm)
+          this.setState({
+            switchStatus: !this.state.switchStatus
+          })
+        }}/>
 
       </Grid>
     );
   }
 }
+// this.props.switchHandler(this.props.bathroom_name, this.props.dorm)

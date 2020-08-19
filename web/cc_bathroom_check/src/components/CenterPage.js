@@ -4,7 +4,6 @@ import BathroomDisplay from './BathroomDisplay';
 import Axios from 'axios';
 const md5 = require('md5');
 
-
 // import TabPanel from '@material-ui/lab/TabPanel';
 
 function hash(rawPassword, options = {}){
@@ -41,18 +40,18 @@ class CenterPage extends Component{
     this.state = {
       value: 0,
       bathroomJSON: [],
-      renderBathrooms: true
+      renderBathrooms: true,
+      codeHash: ''
     }
-
     this.handleChange = this.handleChange.bind(this);
   }
 
-  getData(tmp){
-    let code = hash(this.props.code);
-    console.log(code + this.props.code)
+  getBathrooms(tmp, codeHash){
+    // let code = hash(this.props.code);
+    // console.log(code + this.props.code)
     Axios.get("http://localhost:3001/CC/" + tmp,
               {params: {
-                hash: "asdf"
+                hash: codeHash //ISNT WORKING FOR SOME REASON COME BACK TO
               }}).then(response =>  {
                 console.log("Res" + response.data.length)
                 console.log("RESS " + response.data)
@@ -65,28 +64,46 @@ class CenterPage extends Component{
           });
   }
 
+  postStatus(bathroom_num, dorm, codeHash){
+    Axios.post("http://localhost:3001/CC/" + dorm + "/" + bathroom_num,
+                {params:{
+                    hash: codeHash
+                  }}).then(response => {
+                    console.log("POST Status res: " + response)
+                  });
+  }
+
   handleChange(event, newValue){
     this.setState({value: newValue},
     () => {
       let tmp = determineDorm(this.state.value);
       console.log(tmp)
-      this.getData(tmp)
+      this.getBathrooms(tmp, this.state.codeHash)
     });
   }
 
   componentDidMount(){
     let tmp = determineDorm(this.state.value);
-    this.getData(tmp);
+    this.setState({
+      codeHash: hash(this.props.code)
+    });
+    this.interval = setInterval(() => {
+      this.getBathrooms(tmp, this.state.codeHash);
+    }, 1000);
   }
 
-
+  componentWillUnmount(){
+    clearInterval(this.interval);
+  }
 
   render(){
 
     const shouldRender = this.state.renderBathrooms;
     let content;
     if(this.state.renderBathrooms){
-      content = <BathroomDisplay bathroomJSON={this.state.bathroomJSON}/>;
+      content = <BathroomDisplay bathroomJSON={this.state.bathroomJSON}
+                                  switchHandler={this.postStatus}
+                                  dorm={determineDorm(this.state.value)}/>;
     }else{
       content = <p>No Bathrooms</p>;
     }

@@ -29,9 +29,11 @@ export default class BathroomDisplay extends React.Component{
         alignItems="stretch" style={{padding: 20}}>
         {
           this.props.bathroomJSON.map((bath, index) =>
-            (<Bathroom key= {index} bathroom_name={bath.name} status={
-              determindStatus(bath.status)
-            }/>))
+            (<Bathroom key= {index} bathroom_name={bath.name}
+                                    dorm={this.props.dorm}
+                                    status={determindStatus(bath.status)}
+                                    statusSimple={bath.status}
+                                    switchHandler={this.props.switchHandler}/>))
         }
       </Grid>
     );
