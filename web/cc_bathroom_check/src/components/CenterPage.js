@@ -1,36 +1,113 @@
 import React, { Component } from 'react';
 import { Tabs, Tab, Paper } from '@material-ui/core';
+import BathroomDisplay from './BathroomDisplay';
+import Axios from 'axios';
+const md5 = require('md5');
+
+
 // import TabPanel from '@material-ui/lab/TabPanel';
+
+function hash(rawPassword, options = {}){
+  const salt = options.salt ? options.salt : new Date().getTime();
+  const rounds = options.rounds ? options.rounds : 10;
+
+  let hashed = md5(rawPassword + salt);
+  for (let i = 0; i <= rounds; i++) {
+    hashed = md5(hashed);
+  }
+  // console.log("IN HASH")
+  return `${salt}$${rounds}$${hashed}`;
+}
+
+function determineDorm(index){
+  let tmp = "Err: No Index";
+  console.log(index);
+  switch(index){
+    case 0:
+      tmp = "Loomis";
+      break;
+    case 1:
+      tmp = "Mathias";
+      break;
+    case 2:
+      tmp = "South";
+  }
+  return tmp;
+}
 
 class CenterPage extends Component{
   constructor(props){
     super(props);
     this.state = {
-      value: 0
+      value: 0,
+      bathroomJSON: [],
+      renderBathrooms: true
     }
 
     this.handleChange = this.handleChange.bind(this);
   }
 
-handleChange(event, newValue){
-  console.log(newValue)
-  this.setState({value: newValue})
-}
+  getData(tmp){
+    let code = hash(this.props.code);
+    console.log(code + this.props.code)
+    Axios.get("http://localhost:3001/CC/" + tmp,
+              {params: {
+                hash: "asdf"
+              }}).then(response =>  {
+                console.log("Res" + response.data.length)
+                console.log("RESS " + response.data)
+                if(Array.isArray(response.data)){
+                  this.setState({bathroomJSON: response.data,
+                                renderBathrooms: true});
+                }else{
+                  this.setState({renderBathrooms: false});
+                }
+          });
+  }
+
+  handleChange(event, newValue){
+    this.setState({value: newValue},
+    () => {
+      let tmp = determineDorm(this.state.value);
+      console.log(tmp)
+      this.getData(tmp)
+    });
+  }
+
+  componentDidMount(){
+    let tmp = determineDorm(this.state.value);
+    this.getData(tmp);
+  }
+
+
 
   render(){
+
+    const shouldRender = this.state.renderBathrooms;
+    let content;
+    if(this.state.renderBathrooms){
+      content = <BathroomDisplay bathroomJSON={this.state.bathroomJSON}/>;
+    }else{
+      content = <p>No Bathrooms</p>;
+    }
+
     return(
-      <Paper>
-        <Tabs
-          value={this.state.value}
-          onChange={this.handleChange}
-          indicatorColor="primary"
-          textColor="primary"
-          centered>
-          <Tab label="Loomis" />
-          <Tab label="Mathias" />
-          <Tab label="South" />
-        </Tabs>
-      </Paper>
+      <div>
+        <Paper>
+          <Tabs
+            value={this.state.value}
+            onChange={this.handleChange}
+            indicatorColor="primary"
+            textColor="primary"
+            centered>
+            <Tab label="Loomis" />
+            <Tab label="Mathias" />
+            <Tab label="South" />
+          </Tabs>
+        </Paper>
+        {content}
+
+      </div>
     );
   }
 }

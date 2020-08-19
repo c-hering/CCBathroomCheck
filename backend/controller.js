@@ -86,13 +86,14 @@ exports.ccDorms = (req,res) => {
 exports.dormBathrooms = (req,res) => {
   console.log("request for a dorm's bathrooms");
   var dorm = req.params.dorm;
-  var hash = req.body.hash;
+  var hash = req.query.hash;
   var tmp = checkPass(hash, 0);
   if(tmp){
     // db.run('CREATE TABLE IF NOT EXISTS ' + dorm + '(bathroom_name TEXT UNIQUE NOT NULL, bathroom_status INTEGER NOT NULL);')
     db.all("SELECT bathroom_name, bathroom_status FROM " + dorm, [], (err,row) =>{
       var data = [];
       if(err){
+        console.log("Err:" + err)
         res.send("Err: " + err);
       }else{
         row.forEach((i) => {
@@ -112,6 +113,7 @@ exports.getBathroom = async (req, res) => {
 
   var dorm = req.params.dorm;
   var bathroom = req.params.bathroom;
+  var hash = req.query.hash;
 
   var tmp = checkPass(hash, 1);
   if(tmp){
@@ -129,7 +131,10 @@ exports.getBathroom = async (req, res) => {
 
 exports.addDorm = (req,res) => {
   console.log("request to add dorm");
+
+  var hash = req.query.hash;
   var tmp = checkPass(hash, 0);
+
   if(tmp){
     db.run('CREATE TABLE IF NOT EXISTS cc_dorms (dorm_name TEXT UNIQUE NOT NULL);');
     if(req.body !== {}){
@@ -156,6 +161,8 @@ exports.addDorm = (req,res) => {
 exports.addBathrooms = (req,res) => {
   console.log('request to add bathroom');
   var dorm = req.params.dorm;
+  var hash = req.query.hash;
+
   var tmp = checkPass(hash, 0);
   if(tmp){
     db.run('CREATE TABLE IF NOT EXISTS ' + dorm + '(bathroom_name TEXT UNIQUE NOT NULL, bathroom_status INTEGER NOT NULL);')
@@ -179,6 +186,7 @@ exports.setStatus = async (req,res) => {
   console.log('request to change status');
   var dorm = req.params.dorm;
   var bathroom = req.params.bathroom;
+  var hash = req.query.hash;
 
   var tmp = checkPass(hash, 1);
   if(tmp){
