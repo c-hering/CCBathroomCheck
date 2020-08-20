@@ -10,19 +10,9 @@ class TopBar extends Component{
     return(
       <AppBar position="sticky">
         <Toolbar>
-          <Grid container spaceing={3}>
-          <Grid item xs={3}>
-            <Typography variant="h6">
-              CC Bathroom Check
-            </Typography>
-          </Grid>
-          <Grid item xs={6}/>
-          <Grid item xs={3}>
-              <TextField id="standard-basic" label="Code" onChange={(event) =>{
-                this.props.eventHandler(event)
-              }}/>
-          </Grid>
-          </Grid>
+          <Typography variant="h6">
+            CC Bathroom Check
+          </Typography>
         </Toolbar>
       </AppBar>
     );
