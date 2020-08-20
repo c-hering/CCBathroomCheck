@@ -15,14 +15,21 @@ function getStatus(dorm, bathroom){
 }
 
 function compare(rawPassword, hashedPassword){
-  try {
-    const [ salt, rounds ] = hashedPassword.split('$');
-    const hashedRawPassword = hash(rawPassword, { salt, rounds });
-    console.log(hashedPassword === hashedRawPassword);
-    return hashedPassword === hashedRawPassword;
-  } catch (error) {
-    throw Error(error.message);
-  }
+  var promise = new Promise( (resolve, reject) => {
+    console.log("COMPARE")
+    try {
+      const [ salt, rounds ] = hashedPassword.split('$');
+      const hashedRawPassword = hash(rawPassword, { salt, rounds });
+      let tmp = (hashedPassword === hashedRawPassword);
+      console.log("Hash check in hash: "  + hashedRawPassword + " Raw: " + rawPassword + " Hash2: " + hashedPassword);
+      return hashedPassword === hashedRawPassword;
+    } catch (error) {
+      console.log(error.message)
+      throw Error(error.message);
+      return false;
+    }
+  });
+  return promise;
 }
 
 function hash(rawPassword, options = {}){
@@ -38,7 +45,7 @@ function hash(rawPassword, options = {}){
 }
 
 async function checkPass(hash, level){
-  var tmp = false;
+  var tmp = true;
     db.run('CREATE TABLE IF NOT EXISTS passwords (password TEXT UNIQUE NOT NULL, level INTEGER NOT NULL);');
     if(level == 0){
       db.get("SELECT password pass FROM passwords WHERE level = 0", async (err,row) => {
@@ -46,20 +53,27 @@ async function checkPass(hash, level){
           console.log("Err: " + err);
           tmp = false;
         }else{
-          tmp = await compare(row.pass, hash);
+          console.log("Pass: " + row.pass)
+          compare(row.pass, hash).then((bool) => {
+            console.log("Bool: " + bool);
+            return bool;
+          });
         }
       });
     }else{
       db.get("SELECT password pass FROM passwords WHERE level = 1", async (err,row) => {
         if(err){
           console.log("Err: " + err);
-          tmp = false;
+          return false;
         }else{
-          tmp = await compare(row.pass, hash);
+          compare(row.pass, hash).then((bool) => {
+            console.log("Bool2: " + bool);
+            return bool;
+          });
         }
       });
     }
-    return tmp;
+    // return tmp;
   }
 
 exports.home = (req,res) => {
@@ -89,7 +103,7 @@ exports.dormBathrooms = (req,res) => {
   var hash = req.query.hash;
   checkPass(hash, 0).then((tmp) => {
     if(tmp){
-      console.log("asdfasd" + tmp)
+      console.log("if " + tmp)
       // db.run('CREATE TABLE IF NOT EXISTS ' + dorm + '(bathroom_name TEXT UNIQUE NOT NULL, bathroom_status INTEGER NOT NULL);')
       db.all("SELECT bathroom_name, bathroom_status FROM " + dorm, [], (err,row) =>{
         var data = [];
@@ -105,7 +119,7 @@ exports.dormBathrooms = (req,res) => {
         }
       });
     }else{
-      console.log("asdfas" + tmp)
+      console.log("else " + tmp)
       res.send("Err: Incorrect Password");
     }
     console.log("Hash check: " + tmp)
