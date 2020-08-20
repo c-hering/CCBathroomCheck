@@ -14,4 +14,4 @@ app.use((req,res,next) => {
 
 routes(app)
 app.listen(port);
-console.log("CC B-Check started on port: " + port);
+console.log("CC B-Check started on port: " + port + "\n");

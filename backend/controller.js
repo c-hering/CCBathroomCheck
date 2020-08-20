@@ -1,7 +1,15 @@
 var sqlite3 = require('sqlite3').verbose();
+var db = new sqlite3.Database('./serverdb.db');
+
 const uuidGen = require('uuid/v4');
 const md5 = require('md5');
-var db = new sqlite3.Database('./serverdb.db');
+const bcrypt = require('../bcrypt');
+
+function verify(recievedHash, rawPassword){
+
+
+
+}
 
 exports.home = (req,res) => {
 
@@ -34,9 +42,19 @@ exports.dormBathrooms = (req,res) => {
   var dorm = req.params.dorm;
   // var hash = req.query.hash;
 
-  res.send("Not today, Frank");
-  //check if password is correct, then get all the bathrooms for a dorm
-
+  db.all("SELECT bathroom_name, bathroom_status FROM " + dorm, [], (err,row) =>{
+    var data = [];
+    if(err){
+      console.log("Err:" + err)
+      res.send("Err: " + err);
+    }else{
+      row.forEach((i) => {
+        data.push({"name" : i.bathroom_name,
+                  "status" : i.bathroom_status});
+      });
+      res.json(data);
+    }
+  });
 };
 
 exports.addDorm = (req,res) => {
@@ -68,7 +86,7 @@ exports.addBathrooms = (req,res) => {
   console.log('POST request to /CC/{dorm} for new bathroom \n');
 
   var dorm = req.params.dorm;
-  var hash = req.query.hash;
+  // var hash = req.query.hash;
 
   db.run('CREATE TABLE IF NOT EXISTS ' + dorm + '(bathroom_name TEXT UNIQUE NOT NULL, bathroom_status INTEGER NOT NULL);')
 
@@ -85,13 +103,15 @@ exports.addBathrooms = (req,res) => {
   }
 }
 
-exports.setStatus = async (req,res) => {
+exports.setStatus = (req,res) => {
   console.log('POST request to change status \n');
 
   var dorm = req.params.dorm;
   var bathroom = req.params.bathroom;
 
-  var hash = req.query.hash;
+  // var hash = req.query.hash;
+
+  // db.get("SELECT password pass FROM passwords WHERE level = 1", (err, ))
 
   db.run("UPDATE " + dorm + " SET bathroom_status = ABS(bathroom_status - 1) WHERE bathroom_name = '" + bathroom + "'", (err) => {
     if(err){
